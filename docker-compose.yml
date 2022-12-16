@@ -25,8 +25,7 @@ services:
       - ./letsencrypt:/etc/letsencrypt
     networks:
       - default
-    labels:
-      org.label-schema.group: "monitoring"
+    
 
 # NGINX PROXY MANAGER DB
   db:
@@ -42,8 +41,6 @@ services:
       - ./data/mysql:/var/lib/mysql
     networks:
       - default
-    labels:
-      org.label-schema.group: "monitoring"
 
 # POSTGRES
   pg:
@@ -66,8 +63,6 @@ services:
     restart: unless-stopped
     networks:
       - default
-    labels:
-      org.label-schema.group: "monitoring"
 
 # PROMETEUS
   prometheus:
@@ -88,8 +83,6 @@ services:
       - 9090
     networks:
       - default
-    labels:
-      org.label-schema.group: "monitoring"
 
   pushgateway:
     image: prom/pushgateway:v1.2.0
@@ -99,8 +92,6 @@ services:
       - 9091
     networks:
       - default
-    labels:
-      org.label-schema.group: "monitoring"
 
 # NODE EXPORTER
   nodeexporter:
@@ -120,8 +111,6 @@ services:
       - 9100
     networks:
       - default
-    labels:
-      org.label-schema.group: "monitoring"
 
 # GRAFANA
   grafana:
@@ -142,8 +131,6 @@ services:
     restart: unless-stopped
     networks:
       - default
-    labels:
-      org.label-schema.group: "monitoring"
 
 # DOCKER NETWORK
 networks:
