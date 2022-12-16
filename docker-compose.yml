@@ -22,6 +22,7 @@ services:
       - default
     labels:
       org.label-schema.group: "monitoring"
+      
 # NGINX PROXY MANAGER DB
   db:
     image: 'jc21/mariadb-aria:latest'
@@ -116,7 +117,6 @@ services:
       - default
     labels:
       org.label-schema.group: "monitoring"
-
 
 # GRAFANA
   grafana:
