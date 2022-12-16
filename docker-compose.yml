@@ -1,0 +1,152 @@
+version: '3.5'
+
+services:
+# NGINX PROXY MANAGER
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager-app
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    environment:
+      DB_MYSQL_HOST: "db"
+      DB_MYSQL_PORT: 3306
+      DB_MYSQL_USER: "npm-usr1"
+      DB_MYSQL_PASSWORD: "npm-pwd1"
+      DB_MYSQL_NAME: "npm"
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+# NGINX PROXY MANAGER DB
+  db:
+    image: 'jc21/mariadb-aria:latest'
+    container_name: nginx-proxy-manager-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 'npm-npm'
+      MYSQL_DATABASE: 'npm'
+      MYSQL_USER: 'npm-usr1'
+      MYSQL_PASSWORD: 'npm-pwd1'
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+# POSTGRES
+  pg:
+    container_name: pg-db
+    image: postgres:13.9-alpine3.17
+    ports:
+    - "5432:5432"
+    environment:
+      - POSTGRES_DB:grafanadb
+      - POSTGRES_USER:admin
+      - POSTGRES_PASSWORD:neAdmin
+    volumes:
+      - './data:/var/lib/postgresql/data'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -h 127.0.0.1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+# PROMETEUS
+  prometheus:
+    image: prom/prometheus:v2.17.1
+    container_name: prometheus-app
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    expose:
+      - 9090
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+  pushgateway:
+    image: prom/pushgateway:v1.2.0
+    container_name: pushgateway-app
+    restart: unless-stopped
+    expose:
+      - 9091
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+# NODE EXPORTER
+  nodeexporter:
+    image: prom/node-exporter:v0.18.1
+    container_name: nodeexporter-app
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    expose:
+      - 9100
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+
+# GRAFANA
+  grafana:
+    # Image tag (replace with yours)
+    image: grafana/grafana:main-ubuntu
+    container_name: grafana-app
+    environment:
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: postgres:5432
+      GF_DATABASE_NAME: grafanadb
+      GF_DATABASE_USER: admin
+      GF_DATABASE_PASSWORD: neAdmin
+      GF_SECURITY_ADMIN_USER: ${ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_AUTH_ANONYMOUS_DISABLE_LOGIN_FORM: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    restart: unless-stopped
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+# DOCKER NETWORK
+networks:
+  default:
+    external: true
+    driver: bridge
+    name: monitoring
+# DATA
+volumes:
+    prometheus_data: {}
+    grafana_data: {}
