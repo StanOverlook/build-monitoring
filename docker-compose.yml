@@ -144,7 +144,6 @@ services:
 networks:
   default:
     driver: bridge
-    name: monitoring
 # DATA
 volumes:
     prometheus_data: {}
