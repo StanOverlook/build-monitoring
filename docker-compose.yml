@@ -93,7 +93,6 @@ services:
       - default
     labels:
       org.label-schema.group: "monitoring"
-	
   pushgateway:
     image: prom/pushgateway:v1.2.0
     container_name: pushgateway-app
