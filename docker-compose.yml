@@ -57,3 +57,97 @@ services:
   pg:
     container_name: pg-db
     image: postgres:13.9-alpine3.17
+    environment:
+      - POSTGRES_DB:grafanadb
+      - POSTGRES_USER:admin
+      - POSTGRES_PASSWORD nc3i8Utm2qKGfkj4kXbNvTt
+      - POSTGRES_HOST_AUTH_METHOD:trust
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    expose:
+      - 5432
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+# PROMETEUS
+  prometheus:
+    image: prom/prometheus:v2.17.1
+    container_name: prometheus-app
+    volumes:
+      - prometheus_config:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    expose:
+      - 9090
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+	
+  pushgateway:
+    image: prom/pushgateway:v1.2.0
+    container_name: pushgateway-app
+    restart: unless-stopped
+    expose:
+      - 9091
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+# NODE EXPORTER
+  nodeexporter:
+    image: prom/node-exporter:v0.18.1
+    container_name: nodeexporter-app
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
+    expose:
+      - 9100
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
+
+# GRAFANA
+  grafana:
+    image: grafana/grafana:main-ubuntu
+    container_name: grafana-app
+    environment:
+      GF_DATABASE_TYPE: postgres
+      GF_DATABASE_HOST: pg-db:5432
+      GF_DATABASE_NAME: grafanadb
+      GF_DATABASE_USER: admin
+      GF_DATABASE_PASSWORD: nc3i8Utm2qKGfkj4kXbNvTt
+      GF_SECURITY_ADMIN_USER: grafanaadmin
+      GF_SECURITY_ADMIN_PASSWORD: grafanapwd
+      GF_AUTH_ANONYMOUS_ENABLED: 'false'
+      GF_AUTH_ANONYMOUS_DISABLE_LOGIN_FORM: 'false'
+      GF_USERS_ALLOW_SIGN_UP: 'false'
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - grafana_config:/etc/grafana
+    expose:
+      - 3000
+    networks:
+      - default
+    labels:
+      org.label-schema.group: "monitoring"
