@@ -6,9 +6,7 @@ networks:
 # DATA
 volumes:
     prometheus_data:
-    prometheus_config:
     grafana_data:
-    grafana_config:
     nginx_data:
     pg_data:
 
@@ -58,10 +56,10 @@ services:
     container_name: pg-db
     image: postgres:13.9-alpine3.17
     environment:
-      - POSTGRES_DB:grafanadb
-      - POSTGRES_USER:admin
-      - POSTGRES_PASSWORD nc3i8Utm2qKGfkj4kXbNvTt
-      - POSTGRES_HOST_AUTH_METHOD:trust
+      - POSTGRES_DB=grafanadb
+      - POSTGRES_USER=grafanauser
+      - POSTGRES_PASSWORD=nc3i8Utm2qKGfkj4kXbNvTt
+      - POSTGRES_HOST_AUTH_METHOD=trust
     volumes:
       - pg_data:/var/lib/postgresql/data
     restart: unless-stopped
@@ -77,7 +75,7 @@ services:
     image: prom/prometheus:v2.17.1
     container_name: prometheus-app
     volumes:
-      - prometheus_config:/etc/prometheus
+      - ./prometheus:/etc/prometheus
       - prometheus_data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -93,6 +91,7 @@ services:
       - default
     labels:
       org.label-schema.group: "monitoring"
+
   pushgateway:
     image: prom/pushgateway:v1.2.0
     container_name: pushgateway-app
@@ -133,7 +132,7 @@ services:
       GF_DATABASE_TYPE: postgres
       GF_DATABASE_HOST: pg-db:5432
       GF_DATABASE_NAME: grafanadb
-      GF_DATABASE_USER: admin
+      GF_DATABASE_USER: grafanauser
       GF_DATABASE_PASSWORD: nc3i8Utm2qKGfkj4kXbNvTt
       GF_SECURITY_ADMIN_USER: grafanaadmin
       GF_SECURITY_ADMIN_PASSWORD: grafanapwd
@@ -143,7 +142,7 @@ services:
     restart: unless-stopped
     volumes:
       - grafana_data:/var/lib/grafana
-      - grafana_config:/etc/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
     expose:
       - 3000
     networks:
